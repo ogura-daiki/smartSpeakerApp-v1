@@ -97,14 +97,14 @@ class App extends LitElement{
       if(isFinal){
         const result = testSkill.execAll(textList);
         if(!result.matched){
-          this.input[this.#index].result = [
+          this.input[this.#index].results = [
             {type:"text", value:"すみません、よくわかりませんでした。"}
           ];
           console.log("該当なし："+textList[0]);
         }
         else{
           inputSession.text = result.input;
-          this.input[this.#index].result = result.result;
+          this.input[this.#index].results = result.result;
         }
         this.#index+=1;
       }
@@ -127,9 +127,9 @@ class App extends LitElement{
     return html`
     <div id="root">
       <div id="timeline">
-      ${this.input.map(({fixed, text, result})=>html`
+      ${this.input.map(({fixed, text, results})=>html`
         <div class="input ${fixed?"fixed":""}">${text}</div>
-        ${when(result, ()=>this.#inputResult(result))}
+        ${when(results, ()=>this.#inputResult(results))}
       `)}
       </div>
       <div id="bottomBar">
