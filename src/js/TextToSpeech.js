@@ -1,9 +1,8 @@
-const speech = (text) => {
-  // 発言を設定
-  const uttr = new SpeechSynthesisUtterance()
-  uttr.text = text
-  // 発言を再生
-  window.speechSynthesis.speak(uttr);
+const speech = (texts) => {
+  window.speechSynthesis.pause();
+  window.speechSynthesis.cancel();
+  texts.map(text=>Object.assign(new SpeechSynthesisUtterance(), {text}))
+    .forEach(uttr=>window.speechSynthesis.speak(uttr));
 }
 
 export {speech};

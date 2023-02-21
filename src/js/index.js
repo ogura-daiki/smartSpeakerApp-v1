@@ -98,7 +98,7 @@ class App extends LitElement{
       if(isFinal){
         const result = testSkill.execAll(textList);
         let results = [
-          {type:"text", value:"すみません、よくわかりませんでした。"}
+          {type:"text", value:"すみません、よくわかりませんでした。"},
         ];
         if(!result.matched){
           console.log("該当なし："+textList[0]);
@@ -109,11 +109,7 @@ class App extends LitElement{
         }
 
         inputSession.results = results;
-        results.forEach(r=>{
-          if(r.type === "text"){
-            speech(r.value);
-          }
-        })
+        speech(results.filter(r=>r.type==="text").map(r=>r.value));
 
         this.#index+=1;
       }
