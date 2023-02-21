@@ -11,6 +11,22 @@ class App extends LitElement{
       height:100%;
       background:linear-gradient(165deg, rgb(150,180,255), rgb(100,150,255));
 
+    }
+    #root{
+      width:100%;
+      height:100%;
+      display:flex;
+      flex-flow:column;
+    }
+    #timeline{
+      display:flex;
+      flex-flow:column;
+      gap:8px;
+      padding:8px;
+      flex-basis:0px;
+      flex-grow:1;
+
+      
       overflow-x:hidden;
       scroll-behavior: smooth;
     }
@@ -36,7 +52,7 @@ class App extends LitElement{
     
     .reply{
       border-top-left-radius:0px;
-      background:rgba(230,230,230);
+      background:rgba(250,250,250);
       color:black;
       align-self:flex-start;
       --move-dir:-1;
@@ -51,6 +67,12 @@ class App extends LitElement{
         transform:translateX(0px);
         opacity:1;
       }
+    }
+
+    #bottomBar{
+      padding:8px 16px;
+      background:rgb(250,250,250);
+      box-sizing:border-box;
     }
     `;
   }
@@ -103,23 +125,27 @@ class App extends LitElement{
 
   render(){
     return html`
-    <button @click=${e=>SpeechToText.start()}>音声認識開始</button>
-    <div id="timeline" style="display:flex;flex-flow:column;gap:8px;padding:8px;">
-    ${this.input.map(({fixed, text, result})=>html`
-      <div class="input ${fixed?"fixed":""}">${text}</div>
-      ${when(result, ()=>this.#inputResult(result))}
-    `)}
+    <div id="root">
+      <div id="timeline">
+      ${this.input.map(({fixed, text, result})=>html`
+        <div class="input ${fixed?"fixed":""}">${text}</div>
+        ${when(result, ()=>this.#inputResult(result))}
+      `)}
+      </div>
+      <div id="bottomBar">
+        <button @click=${e=>SpeechToText.start()}>音声認識開始</button>
+      </div>
     </div>
     `;
   }
 
   scrollTimer;
   updated(){
-    //const timeline = this.renderRoot.querySelector("#timeline");
+    const timeline = this.renderRoot.querySelector("#timeline");
     clearTimeout(this.scrollTimer);
     this.scrollTimer = setTimeout(()=>{
-      this.scrollTo(0, this.scrollHeight - this.clientHeight);
-    }, 200)
+      timeline.scrollTo(0, timeline.scrollHeight - timeline.clientHeight);
+    }, 100)
   }
 }
 customElements.define("main-app", App);
