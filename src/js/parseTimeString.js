@@ -118,7 +118,7 @@ const secondsToTimeString = seconds => {
       result += unitResults[name]+timeUnits[name].str;
     }
     return result;
-  },"");
+  },"") || "0秒";
 }
 
 export {parseTimeString, secondsToTimeString};

@@ -1,8 +1,81 @@
-import { html, LitElement, css, when } from "./Lit.js";
+import { html, LitElement, css, when, keyed, guard } from "./Lit.js";
 import { parseTimeString, secondsToTimeString } from "./parseTimeString.js";
 import SpeechToText from "./RecSpeech.js";
 import { Command, Skill, Slot } from "./Slot.js";
 import { speech } from "./TextToSpeech.js";
+
+class TimerView extends LitElement{
+  static get styles(){
+    return css`
+    #container{
+      display:flex;
+      flex-flow:row;
+      place-items:center;
+    }
+    #icon{
+      display:grid;
+      place-items:center;
+      font-size:3rem;
+    }
+    #display{
+      padding-left:1rem;
+      display:flex;
+      flex-flow:column;
+      flex-grow:1;
+      gap:8px;
+    }
+    #max{
+      font-size:1rem;
+      line-height:1;
+    }
+    #status{
+      font-size:2rem;
+      line-height:1;
+    }
+    `;
+  }
+
+  static get properties(){
+    return {
+      timerSession:{type:Object},
+    };
+  }
+
+  constructor(){
+    super();
+    const loop = ()=>{
+      this.requestUpdate();
+      if(this.timerSession && this.timerSession.finished){
+        return;
+      }
+      setTimeout(loop, 500);
+    };
+    loop();
+  }
+
+  render(){
+    if(!this.timerSession){
+      return;
+    }
+    const nokori = this.timerSession.canceled? 0 : Math.max(0, (this.timerSession.start+this.timerSession.duration)-Date.now());
+    const status = this.timerSession.canceled?"キャンセル":this.timerSession.finished?"完了":secondsToTimeString(Math.floor(nokori/1000));
+    console.log(nokori);
+    return html`
+    <div>タイマー</div>
+    <div id=container>
+      <div>
+        <div id=icon>⌛</div>
+      </div>
+      <div id=display>
+        <span id=max>${secondsToTimeString(this.timerSession.duration/1000)}</span>
+        <span id=status>${status}</span>
+      </div>
+      ${when(!this.timerSession.finished, ()=>html`<button @click=${()=>this.timerSession.cancel()}>キャンセル</button>`)}
+    </div>
+    `;
+  }
+}
+customElements.define("timer-view", TimerView);
 
 class App extends LitElement{
   static get styles(){
@@ -144,13 +217,27 @@ class App extends LitElement{
               const timerSession = {
                 id,
                 start:Date.now(),
-                timeoutId:setTimeout(()=>{
-                  alert("タイマーが完了しました");
+                duration:result.value.duration,
+                finished:false,
+                canceled:false,
+                onFinish:()=>{
                   const idx = this.timers.findIndex(t=>t.id === id);
                   this.timers.splice(idx, 1);
+                  timerSession.finished=true;
                   this.requestUpdate();
+                },
+                cancel:()=>{
+                  alert("タイマーをキャンセルしました");
+                  clearTimeout(timerSession.timeoutId);
+                  timerSession.canceled = true;
+                  timerSession.onFinish();
+                },
+                timeoutId:setTimeout(()=>{
+                  alert("タイマーが完了しました");
+                  timerSession.onFinish();
                 }, result.value.duration),
               };
+              result.value.sessionId = id;
               this.timers.push(timerSession);
               this.requestUpdate();
             }
@@ -171,6 +258,13 @@ class App extends LitElement{
         return html`
         <div class="reply">${value}</div>
         `;
+      }
+      else if(type === "timer" && value.action === "add"){
+        return guard([value.sessionId], ()=>html`
+        <div class="reply">
+          <timer-view .timerSession=${this.timers.find(ts=>ts.id === value.sessionId)}></timer-view>
+        </div>
+        `);
       }
     });
   }
