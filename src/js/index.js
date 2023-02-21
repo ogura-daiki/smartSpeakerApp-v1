@@ -81,6 +81,7 @@ class App extends LitElement{
   static get properties(){
     return {
       input:{type:Array},
+      timers:{type:Array},
     }
   }
 
@@ -88,6 +89,7 @@ class App extends LitElement{
   constructor(){
     super();
     this.input = [];
+    this.timers = [];
 
     SpeechToText.setCallback(({isFinal, textList})=>{
       if(!this.input[this.#index]){
@@ -112,7 +114,30 @@ class App extends LitElement{
 
         inputSession.results = results;
         console.log(result, results);
-        speech(results.filter(r=>r.type==="text").map(r=>r.value));
+        const texts = [];
+        for(const result of results){
+          if(result.type === "text"){
+            texts.push(result.value);
+          }
+          else if(result.type === "timer"){
+            if(result.value.action === "add"){
+              const id = Math.random()+Date.now();
+              const timerSession = {
+                id,
+                start:Date.now(),
+                timeoutId:setTimeout(()=>{
+                  alert("タイマーが完了しました");
+                  const idx = this.timers.findIndex(t=>t.id === id);
+                  this.timers.splice(idx, 1);
+                  this.requestUpdate();
+                }, result.value.duration),
+              };
+              this.timers.push(timerSession);
+              this.requestUpdate();
+            }
+          }
+        }
+        speech(texts);
 
         this.#index+=1;
       }
@@ -142,6 +167,7 @@ class App extends LitElement{
       </div>
       <div id="bottomBar">
         <button @click=${e=>SpeechToText.start()}>音声認識開始</button>
+        <button>⌚${when(this.timers.length, ()=>html`<span>${this.timers.length}</span>`)}</button>
       </div>
     </div>
     `;
@@ -194,7 +220,7 @@ testSkill.defineCommands({
     }),
     callback:(result)=>{
       return [
-        {type:"timer", value:{action:"add", duration:result.value.seconds}},
+        {type:"timer", value:{action:"add", duration:result.value.seconds*1000}},
         {type:"text", value:`${result.value.timeString}のタイマーをセットしました`}
       ];
     }
