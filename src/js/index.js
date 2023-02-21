@@ -4,6 +4,12 @@ import SpeechToText from "./RecSpeech.js";
 import { Command, Skill, Slot } from "./Slot.js";
 import { speech } from "./TextToSpeech.js";
 
+const sounds = {
+  alarm01:new Howl({
+    src: [`${rootPath}/src/sounds/alarm01.mp3`],
+  }),
+};
+
 class TimerView extends LitElement{
   static get styles(){
     return css`
@@ -233,7 +239,8 @@ class App extends LitElement{
                   timerSession.onFinish();
                 },
                 timeoutId:setTimeout(()=>{
-                  alert("タイマーが完了しました");
+                  //alert("タイマーが完了しました");
+                  sounds.alarm01.play();
                   timerSession.onFinish();
                 }, result.value.duration),
               };
