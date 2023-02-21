@@ -47,7 +47,7 @@ const slotFactory = {
       vals = vals.map(v=>Slot(v));
       const regexStr = vals.reduce((s,v,i)=>s+`(?<v${i}>.+?)`+strs[i+1],strs[0]);
       const regex = new RegExp(`^${regexStr}$`);
-      console.log(regexStr, vals.map(v=>[v.slotName, v]));
+      //console.log(regexStr, vals.map(v=>[v.slotName, v]));
       return (input) => {
         if(!regex.test(input)){
           return false;
@@ -61,7 +61,7 @@ const slotFactory = {
           }
           return [count++,result];
         });
-        console.log(groupResults)
+        //console.log(groupResults)
         if(!groupResults.every(([,v])=>v !== false)){
           return false;
         }
@@ -128,7 +128,7 @@ const Skill = (skillName, wakeWord) => {
         for(const [name, command] of commands.entries()){
           const result = command(input);
           if(result.matched){
-            console.log(result);
+            //console.log(result);
             return {input:result.match.all, ...result};
           }
         }

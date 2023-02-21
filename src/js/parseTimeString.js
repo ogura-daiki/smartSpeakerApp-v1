@@ -59,7 +59,7 @@ const parseKanjiNum = str=>{
       continue;
     }
     const str = groups[kanjiUnit.name].replace(kanjiUnit.str, "")||"一";
-    console.log(str, kanjiUnit);
+    //console.log(str, kanjiUnit);
     const num = +str.replace(/[一二三四五六七八九]/g, s=>"一二三四五六七八九".indexOf(s)+1);
     value += kanjiUnit.value*num;
   }

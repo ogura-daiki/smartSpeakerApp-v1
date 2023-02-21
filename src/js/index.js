@@ -65,7 +65,7 @@ class TimerView extends LitElement{
     }
     const nokori = this.timerSession.canceled? 0 : Math.max(0, (this.timerSession.start+this.timerSession.duration)-Date.now());
     const status = this.timerSession.canceled?"キャンセル":this.timerSession.finished?"完了":secondsToTimeString(Math.floor(nokori/1000));
-    console.log(nokori);
+    //console.log(nokori);
     return html`
     <div>タイマー</div>
     <div id=container>
@@ -197,13 +197,13 @@ class App extends LitElement{
       inputSession.fixed = isFinal;
       inputSession.text = textList[0];
       if(isFinal){
-        console.log(textList)
+        //console.log(textList)
         const result = testSkill.execAll(textList);
         let results = [
           {type:"text", value:"すみません、よくわかりませんでした。"},
         ];
         if(!result.matched){
-          console.log("該当なし："+textList[0]);
+          //console.log("該当なし："+textList[0]);
         }
         else{
           inputSession.text = result.input;
@@ -211,7 +211,7 @@ class App extends LitElement{
         }
 
         inputSession.results = results;
-        console.log(result, results);
+        //console.log(result, results);
         const texts = [];
         for(const result of results){
           if(result.type === "text"){
@@ -259,7 +259,7 @@ class App extends LitElement{
   }
 
   #inputResult(results){
-    console.log(results);
+    //console.log(results);
     return results.map(({type, value})=>{
       if(type === "text"){
         return html`
@@ -335,7 +335,7 @@ testSkill.defineCommands({
         return false;
       }
       const readableTimeString = secondsToTimeString(seconds);
-      console.log(readableTimeString);
+      //console.log(readableTimeString);
       return {all:timeString+result.groups.operate, value:{seconds, timeString:readableTimeString}};
     }),
     callback:(result)=>{
