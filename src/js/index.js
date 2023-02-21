@@ -76,6 +76,25 @@ class App extends LitElement{
       background:rgb(250,250,250);
       box-sizing:border-box;
     }
+
+    #timerButton{
+      position:relative;
+    }
+    .badge{
+      background:crimson;
+      border-radius:999999vmax;
+      color:white;
+      padding:3px 4px 1px 4px;
+      font-size:0.5rem;
+      line-height:0.5rem;
+      display:grid;
+      place-items:center;
+
+      position:absolute;
+      top:0px;
+      right:0px;
+      box-sizing:border-box;
+    }
     `;
   }
   static get properties(){
@@ -167,7 +186,7 @@ class App extends LitElement{
       </div>
       <div id="bottomBar">
         <button @click=${e=>SpeechToText.start()}>音声認識開始</button>
-        <button>⌚${when(this.timers.length, ()=>html`<span>${this.timers.length}</span>`)}</button>
+        <button id="timerButton">⌚${when(this.timers.length, ()=>html`<span class="badge">${this.timers.length}</span>`)}</button>
       </div>
     </div>
     `;
