@@ -1,4 +1,5 @@
 import { html, LitElement, css, when } from "./Lit.js";
+import { parseTimeString, secondsToTimeString } from "./parseTimeString.js";
 import SpeechToText from "./RecSpeech.js";
 import { Command, Skill, Slot } from "./Slot.js";
 import { speech } from "./TextToSpeech.js";
@@ -96,6 +97,7 @@ class App extends LitElement{
       inputSession.fixed = isFinal;
       inputSession.text = textList[0];
       if(isFinal){
+        console.log(textList)
         const result = testSkill.execAll(textList);
         let results = [
           {type:"text", value:"すみません、よくわかりませんでした。"},
@@ -109,6 +111,7 @@ class App extends LitElement{
         }
 
         inputSession.results = results;
+        console.log(result, results);
         speech(results.filter(r=>r.type==="text").map(r=>r.value));
 
         this.#index+=1;
@@ -170,6 +173,32 @@ testSkill.defineCommands({
       return [{type:"text", value:`はい、${greet}。`}]
     }
   }),
+  timer:Command({
+    root:Slot(input=>{
+      const result = /^(?<time>.+)+(?<operate>の(?:タイマー|アラーム)を?(?:セットして|かけて))$/.exec(input);
+      if(!result) return false;
+      const timeString = result.groups.time
+        .replace(/\s/, "")
+        .replace(/([ふぶぷ]ん|文)/g, "分")
+        //.replace(/[]/g, s=>[..."一二三四五六七八九"].indexOf(s)+1)
+        .replace(/[版]/, "半")
+        .replace(/[点天]/, ".");
+
+      const seconds = parseTimeString(timeString);
+      if(!seconds){
+        return false;
+      }
+      const readableTimeString = secondsToTimeString(seconds);
+      console.log(readableTimeString);
+      return {all:timeString+result.groups.operate, value:{seconds, timeString:readableTimeString}};
+    }),
+    callback:(result)=>{
+      return [
+        {type:"timer", value:{action:"add", duration:result.value.seconds}},
+        {type:"text", value:`${result.value.timeString}のタイマーをセットしました`}
+      ];
+    }
+  })
 });
 
 //SpeechToText.start();

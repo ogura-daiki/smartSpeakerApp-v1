@@ -85,7 +85,7 @@ const Command = ({root, callback}) => (input) => {
     return {matched};
   }
   const result = callback(match);
-  return {matched, result};
+  return {matched, result, match};
 }
 
 const Skill = (skillName, wakeWord) => {
@@ -118,7 +118,7 @@ const Skill = (skillName, wakeWord) => {
       for(const [name, command] of commands.entries()){
         const result = command(input);
         if(result.matched){
-          return {input, ...result};
+          return {input:result.match.all, ...result};
         }
       }
       return {matched:false};
@@ -128,7 +128,8 @@ const Skill = (skillName, wakeWord) => {
         for(const [name, command] of commands.entries()){
           const result = command(input);
           if(result.matched){
-            return {input, ...result};
+            console.log(result);
+            return {input:result.match.all, ...result};
           }
         }
       }
