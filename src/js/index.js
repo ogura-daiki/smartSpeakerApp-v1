@@ -1,6 +1,7 @@
 import { html, LitElement, css, when } from "./Lit.js";
 import SpeechToText from "./RecSpeech.js";
 import { Command, Skill, Slot } from "./Slot.js";
+import { speech } from "./TextToSpeech.js";
 
 class App extends LitElement{
   static get styles(){
@@ -96,16 +97,24 @@ class App extends LitElement{
       inputSession.text = textList[0];
       if(isFinal){
         const result = testSkill.execAll(textList);
+        let results = [
+          {type:"text", value:"すみません、よくわかりませんでした。"}
+        ];
         if(!result.matched){
-          this.input[this.#index].results = [
-            {type:"text", value:"すみません、よくわかりませんでした。"}
-          ];
           console.log("該当なし："+textList[0]);
         }
         else{
           inputSession.text = result.input;
-          this.input[this.#index].results = result.result;
+          results = result.result;
         }
+
+        inputSession.results = results;
+        results.forEach(r=>{
+          if(r.type === "text"){
+            speech(r.value);
+          }
+        })
+
         this.#index+=1;
       }
       this.requestUpdate();
