@@ -339,24 +339,6 @@ class App extends LitElement{
     return results.map((result)=>{
       const {view} = createReply(this, result, ["view"]);
       return view.map(c=>html`<div class="reply">${c}</div>`);
-      if(type === "text"){
-        return html`
-        <div class="reply">${value}</div>
-        `;
-      }
-      else if(type === "timer" && value.action === "add"){
-        return guard([value.sessionId], ()=>html`
-        <div class="reply">
-          <timer-view .timerSession=${this.timers.find(ts=>ts.id === value.sessionId)}></timer-view>
-        </div>
-        `);
-      }
-      else if(type === "timer" && value.action === "stop"){
-        return when(value.stopCount, ()=>html`<div class="reply">${value.stopCount}件のタイマーを停止しました</div>`, ()=>html`<div class="reply">停止するタイマーがありませんでした</div>`)
-      }
-      else if(type === "timer" && value.action === "clear"){
-        return html`<div class="reply">すべてのタイマーを削除しました</div>`;
-      }
     });
   }
 
