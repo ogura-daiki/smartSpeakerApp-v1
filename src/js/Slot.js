@@ -39,7 +39,7 @@ const slotFactory = {
     converter:(regex)=>{
       const regexStr = (""+regex).slice(1,-1);
       regex = new RegExp(`^${regexStr}$`);
-      return (input)=>regex.test(input)?regex.exec(input):false;
+      return (input)=>regex.test(input)?{all:input, ...regex.exec(input)}:false;
     }
   },
   tag:{
@@ -52,7 +52,7 @@ const slotFactory = {
     converter:(strs, ...vals)=>{
       strs = strs.map(s=>escapeRegExp(s).replace(/\s+/g, "(?:\\s*)"));
       vals = vals.map(v=>Slot(v));
-      const regexStr = vals.reduce((s,v,i)=>s+`(?<v${i}>.+?)`+strs[i+1],strs[0]);
+      const regexStr = vals.reduce((s,v,i)=>s+`(?<v${i}>.+?)`+`(?<s${i+1}>${strs[i+1]})`,`(?<s0>${strs[0]})`);
       const regex = new RegExp(`^${regexStr}$`);
       //console.log(regexStr, vals.map(v=>[v.slotName, v]));
       return (input) => {
@@ -61,19 +61,30 @@ const slotFactory = {
         }
         const matchResult = regex.exec(input);
         let count=0;
-        const groupResults = Object.entries(matchResult.groups).map(([name, str])=>{
-          const result = vals[+name.slice(1)](str);
-          console.log(result)
-          if(result instanceof NamedImportSlotResult){
-            return [result.name, result.value];
+        const groupEntries = [];
+        let allStr = "";
+        console.log(matchResult.groups)
+        for(const [name, value] of Object.entries(matchResult.groups)){
+          if(name[0]==="s"){
+            allStr += value;
+            continue;
           }
-          return [count++, result];
-        });
-        //console.log(groupResults)
-        if(!groupResults.every(([,v])=>v !== false)){
-          return false;
+
+          const result = vals[+name.slice(1)](value);
+          console.log(result)
+          let entry;
+          if(result instanceof NamedImportSlotResult){
+            entry = [result.name, result.value];
+          }
+          else{
+            entry = [count++, result];
+          }
+          if(entry[1] === false) return false;
+
+          groupEntries.push(entry);
+          allStr+=entry[1].all||"";
         }
-        return {all:input, groups:Object.fromEntries(groupResults)};
+        return {all:allStr, groups:Object.fromEntries(groupEntries)};
       }
     }
   },

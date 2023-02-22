@@ -332,7 +332,7 @@ testSkill.defineSlots({
     if(!seconds){
       return false;
     }
-    return {timeString, seconds};
+    return {all:timeString, seconds};
   })
 });
 
@@ -346,19 +346,13 @@ testSkill.defineCommands({
     }
   }),
   timer:Command({
-    root:Slot(input=>{
-      const body = Slot`${testSkill.slot("duration")}の${Slot(/(?:タイマー|アラーム)を?(?:セットして|かけて)/)}`;
-      const result = body(input);
-      if(!result) return false;
-      result.all = result.groups.duration.timeString+"の"+result.groups[0];
-      return result;
-    }),
+    root:Slot`${testSkill.slot("duration")} の ${Slot(/(?:タイマー|アラーム)を?(?:セットして|かけて)/)}`,
     callback:(result)=>{
 
       console.log(result);
       return [
         {type:"timer", value:{action:"add", duration:result.groups.duration.seconds*1000}},
-        {type:"text", value:`${result.groups.duration.timeString}のタイマーをセットしました`}
+        {type:"text", value:`${result.groups.duration.all}のタイマーをセットしました`}
       ];
     }
   })
