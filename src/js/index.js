@@ -1,6 +1,7 @@
 import { html, LitElement, css, when, keyed, guard } from "./Lit.js";
 import { parseTimeString, secondsToTimeString } from "./parseTimeString.js";
 import SpeechToText from "./RecSpeech.js";
+import Reply from "./Reply.js";
 import { Command, Skill, Slot } from "./Slot.js";
 import { speech } from "./TextToSpeech.js";
 
@@ -82,7 +83,7 @@ class TimerView extends LitElement{
         <span id=status>${status}</span>
       </div>
       ${when(!this.timerSession.finished, ()=>html`<button @click=${()=>this.timerSession.cancel()}>キャンセル</button>`)}
-      ${when(this.timerSession.finished && !this.timerSession.stopped, ()=>html`<button @click=${()=>{this.timerSession.onStop();this.requestUpdate()}}>停止</button>`)}
+      ${when(this.timerSession.finished && !this.timerSession.stopped, ()=>html`<button @click=${()=>{this.timerSession.stop();this.requestUpdate()}}>停止</button>`)}
     </div>
     `;
   }
@@ -206,7 +207,7 @@ class App extends LitElement{
         //console.log(textList)
         const result = testSkill.execAll(textList);
         let results = [
-          {type:"text", value:"すみません、よくわかりませんでした。"},
+          Reply.Text("すみません、よくわかりませんでした。"),
         ];
         if(!result.matched){
           //console.log("該当なし："+textList[0]);
@@ -234,20 +235,20 @@ class App extends LitElement{
                 stopped:false,
                 canceled:false,
                 onFinish:()=>{
-                  const idx = this.timers.findIndex(t=>t.id === id);
-                  this.timers.splice(idx, 1);
                   timerSession.finished=true;
-                  this.requestUpdate();
                 },
-                onStop:()=>{
+                stop:()=>{
                   timerSession.stopped = true;
                   timerSession.sound?.stop();
+                  const idx = this.timers.findIndex(t=>t.id === id);
+                  this.timers.splice(idx, 1);
+                  this.requestUpdate();
                 },
                 cancel:()=>{
-                  alert("タイマーをキャンセルしました");
+                  //alert("タイマーをキャンセルしました");
                   clearTimeout(timerSession.timeoutId);
                   timerSession.canceled = true;
-                  timerSession.onStop();
+                  timerSession.stop();
                   timerSession.onFinish();
                 },
                 timeoutId:setTimeout(()=>{
@@ -260,6 +261,14 @@ class App extends LitElement{
               result.value.sessionId = id;
               this.timers.push(timerSession);
               this.requestUpdate();
+            }
+            else if(result.value.action === "stop"){
+              const target = this.timers.filter(ts=>ts.finished && !ts.stopped);
+              result.value.stopCount = target.length;
+              target.forEach(ts=>ts.stop());
+            }
+            else if(result.value.action === "clear"){
+              this.timers.forEach(ts=>ts.cancel());
             }
           }
         }
@@ -285,6 +294,12 @@ class App extends LitElement{
           <timer-view .timerSession=${this.timers.find(ts=>ts.id === value.sessionId)}></timer-view>
         </div>
         `);
+      }
+      else if(type === "timer" && value.action === "stop"){
+        return when(value.stopCount, ()=>html`<div class="reply">${value.stopCount}件のタイマーを停止しました</div>`, ()=>html`<div class="reply">停止するタイマーがありませんでした</div>`)
+      }
+      else if(type === "timer" && value.action === "clear"){
+        return html`<div class="reply">すべてのタイマーを削除しました</div>`;
       }
     });
   }
@@ -342,18 +357,37 @@ testSkill.defineCommands({
     callback:(result)=>{
       const greet = result.groups.greetWorld.groups.greet.all;
       //alert(`世界の皆へのあいさつ：${greet}`);
-      return [{type:"text", value:`はい、${greet}。`}]
+      return [Reply.Text(`はい、${greet}。`)]
     }
   }),
-  timer:Command({
+  addTimer:Command({
     root:Slot`${testSkill.slot("duration")} の ${Slot(/(?:タイマー|アラーム)を?(?:セットして|かけて)/)}`,
     callback:(result)=>{
 
       console.log(result);
       return [
-        {type:"timer", value:{action:"add", duration:result.groups.duration.seconds*1000}},
-        {type:"text", value:`${result.groups.duration.all}のタイマーをセットしました`}
+        Reply.Timer.add(result.groups.duration.seconds*1000),
+        Reply.Text(`${result.groups.duration.all}のタイマーをセットしました`),
       ];
+    }
+  }),
+  stopTimer:Command({
+    root:Slot(/タイマーを?(止め(て|る)|停止(して|する)?|ストップ(して|する))/),
+    callback:(result)=>{
+      return [
+        Reply.Timer.stop(),
+      ]
+    }
+  }),
+  clearTimer:Command({
+    root:Slot(/(全[部て]の?)?タイマーを?(全[部て])?(クリア(して|する)?|消(して|す)|キャンセル(して|する)?)/),
+    callback:()=>[Reply.Timer.clear()],
+  }),
+  reload:Command({
+    root:Slot(/(再読み込み|リロード)(して)?/),
+    callback:()=>{
+      location.reload();
+      return [];
     }
   })
 });
