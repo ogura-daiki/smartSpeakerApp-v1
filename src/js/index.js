@@ -108,14 +108,11 @@ const ReplyPatterns = {
 const createReply = (ctx, result, keys) => {
 
   let patterns = ReplyPatterns;
-  console.log(result);
   while(true){
     const pattern = patterns[result.type];
     const value = result.value;
     if(pattern instanceof ReplyPattern){
-      console.log(result, value)
       const ret = Object.fromEntries(keys.map(key=>[key, pattern[key](value, ctx)]));
-      console.log(ret);
       return ret;
     }
     patterns = pattern;
