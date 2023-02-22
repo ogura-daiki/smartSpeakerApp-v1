@@ -63,7 +63,7 @@ const slotFactory = {
         let count=0;
         const groupEntries = [];
         let allStr = "";
-        console.log(matchResult.groups)
+        //console.log(matchResult.groups)
         for(const [name, value] of Object.entries(matchResult.groups)){
           if(name[0]==="s"){
             allStr += value;
@@ -71,7 +71,7 @@ const slotFactory = {
           }
 
           const result = vals[+name.slice(1)](value);
-          console.log(result)
+          //console.log(result)
           let entry;
           if(result instanceof NamedImportSlotResult){
             entry = [result.name, result.value];
