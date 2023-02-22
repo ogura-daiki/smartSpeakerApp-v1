@@ -16,6 +16,113 @@ const newAlarmSound = ()=>new Howl({
   loop:true,
 });
 
+const TimerSession = (ctx, duration) => {
+  const start = Date.now();
+  const id = Math.random()+":"+start;
+  console.log({start, id});
+  const timerSession = {
+    id,
+    start,
+    duration,
+    finished:false,
+    stopped:false,
+    canceled:false,
+    
+    onFinish:()=>{
+      timerSession.finished=true;
+    },
+    stop:()=>{
+      timerSession.stopped = true;
+      timerSession.sound?.stop();
+      const idx = ctx.timers.findIndex(t=>t.id === id);
+      clearTimeout(timerSession.timeoutId);
+      ctx.timers.splice(idx, 1);
+      ctx.requestUpdate();
+    },
+    cancel:()=>{
+      //alert("タイマーをキャンセルしました");
+      timerSession.canceled = true;
+      timerSession.stop();
+      timerSession.onFinish();
+    },
+    timeoutId:setTimeout(()=>{
+      //alert("タイマーが完了しました");
+      timerSession.sound = newAlarmSound();
+      timerSession.sound.play();
+      timerSession.onFinish();
+    }, duration),
+  };
+  return timerSession;
+}
+
+class ReplyPattern {
+  constructor({view, speech, action}){
+    Object.assign(this, {view, speech, action});
+  }
+}
+const ReplyPatterns = {
+  text: new ReplyPattern({
+    view:value=>[value],
+    speech:value=>[value],
+    action:()=>{},
+  }),
+  timer:{
+    add:new ReplyPattern({
+      view:(value, ctx)=>[
+        guard([value.sessionId], ()=>{
+          const timerSession = ctx.timers.find(ts=>ts.id === value.sessionId);
+          return html`<timer-view .timerSession=${timerSession}></timer-view>`;
+        }),
+        `${secondsToTimeString(value.duration/1000)}のタイマーをセットしました`,
+      ],
+      speech:value=>[`${secondsToTimeString(value.duration/1000)}のタイマーをセットしました`],
+      action:(value, ctx)=>{
+        const timerSession = TimerSession(ctx, value.duration)
+        value.sessionId = timerSession.id;
+        ctx.timers.push(timerSession);
+        ctx.requestUpdate();
+      },
+    }),
+    stop:new ReplyPattern({
+      view:value=>[when(
+        value.stopCount,
+        ()=>`${value.stopCount}件のタイマーを停止しました`,
+        ()=>`停止するタイマーがありませんでした`,
+      )],
+      speech:()=>[],
+      action:(value, ctx)=>{
+        const targetList = ctx.timers.filter(ts=>ts.finished && !ts.stopped);
+        value.stopCount = targetList.length;
+        targetList.forEach(ts=>ts.stop());
+      }
+    }),
+    clear:new ReplyPattern({
+      view:value=>[`全てのタイマーを削除しました`],
+      speech:value=>[`全てのタイマーを削除しました`],
+      action:(value, ctx)=>{
+        ctx.timers.forEach(ts=>ts.cancel());
+      }
+    }),
+  },
+}
+const createReply = (ctx, result, keys) => {
+
+  let patterns = ReplyPatterns;
+  console.log(result);
+  while(true){
+    const pattern = patterns[result.type];
+    const value = result.value;
+    if(pattern instanceof ReplyPattern){
+      console.log(result, value)
+      const ret = Object.fromEntries(keys.map(key=>[key, pattern[key](value, ctx)]));
+      console.log(ret);
+      return ret;
+    }
+    patterns = pattern;
+    result = value;
+  }
+}
+
 class TimerView extends LitElement{
   static get styles(){
     return css`
@@ -209,10 +316,7 @@ class App extends LitElement{
         let results = [
           Reply.Text("すみません、よくわかりませんでした。"),
         ];
-        if(!result.matched){
-          //console.log("該当なし："+textList[0]);
-        }
-        else{
+        if(result.matched){
           inputSession.text = result.input;
           results = result.result;
         }
@@ -221,57 +325,10 @@ class App extends LitElement{
         //console.log(result, results);
         const texts = [];
         for(const result of results){
-          if(result.type === "text"){
-            texts.push(result.value);
-          }
-          else if(result.type === "timer"){
-            if(result.value.action === "add"){
-              const id = Math.random()+Date.now();
-              const timerSession = {
-                id,
-                start:Date.now(),
-                duration:result.value.duration,
-                finished:false,
-                stopped:false,
-                canceled:false,
-                onFinish:()=>{
-                  timerSession.finished=true;
-                },
-                stop:()=>{
-                  timerSession.stopped = true;
-                  timerSession.sound?.stop();
-                  const idx = this.timers.findIndex(t=>t.id === id);
-                  this.timers.splice(idx, 1);
-                  this.requestUpdate();
-                },
-                cancel:()=>{
-                  //alert("タイマーをキャンセルしました");
-                  clearTimeout(timerSession.timeoutId);
-                  timerSession.canceled = true;
-                  timerSession.stop();
-                  timerSession.onFinish();
-                },
-                timeoutId:setTimeout(()=>{
-                  //alert("タイマーが完了しました");
-                  timerSession.sound = newAlarmSound();
-                  timerSession.sound.play();
-                  timerSession.onFinish();
-                }, result.value.duration),
-              };
-              result.value.sessionId = id;
-              this.timers.push(timerSession);
-              this.requestUpdate();
-            }
-            else if(result.value.action === "stop"){
-              const target = this.timers.filter(ts=>ts.finished && !ts.stopped);
-              result.value.stopCount = target.length;
-              target.forEach(ts=>ts.stop());
-            }
-            else if(result.value.action === "clear"){
-              this.timers.forEach(ts=>ts.cancel());
-            }
-          }
+          const {speech} = createReply(this, result, ["action", "speech"]);
+          texts.push(speech);
         }
+        texts.flat(Infinity);
         speech(texts);
 
         this.#index+=1;
@@ -282,7 +339,9 @@ class App extends LitElement{
 
   #inputResult(results){
     //console.log(results);
-    return results.map(({type, value})=>{
+    return results.map((result)=>{
+      const {view} = createReply(this, result, ["view"]);
+      return view.map(c=>html`<div class="reply">${c}</div>`);
       if(type === "text"){
         return html`
         <div class="reply">${value}</div>
@@ -367,12 +426,11 @@ testSkill.defineCommands({
       console.log(result);
       return [
         Reply.Timer.add(result.groups.duration.seconds*1000),
-        Reply.Text(`${result.groups.duration.all}のタイマーをセットしました`),
       ];
     }
   }),
   stopTimer:Command({
-    root:Slot(/タイマーを?(止め(て|る)|停止(して|する)?|ストップ(して|する))/),
+    root:Slot(/タイマーを?(止め(て|る)|停止(して|する)?|ストップ(して|する)|消(して|す))/),
     callback:(result)=>{
       return [
         Reply.Timer.stop(),
@@ -380,7 +438,7 @@ testSkill.defineCommands({
     }
   }),
   clearTimer:Command({
-    root:Slot(/(全[部て]の?)?タイマーを?(全[部て])?(クリア(して|する)?|消(して|す)|キャンセル(して|する)?)/),
+    root:Slot(/(全[部て]の?)?タイマーを?(全[部て])?(クリア(して|する)?)/),
     callback:()=>[Reply.Timer.clear()],
   }),
   reload:Command({

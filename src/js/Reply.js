@@ -1,8 +1,8 @@
 const Text = (str) => ({type:"text", value:str});
 
-const addTimer = (duration) => ({type:"timer", value:{action:"add", duration}});
-const stopTimer = () => ({type:"timer", value:{action:"stop"}});
-const clearTimer = ()=>({type:"timer", value:{action:"clear"}});
+const addTimer = (duration) => ({type:"timer", value:{type:"add", value:{duration}}});
+const stopTimer = () => ({type:"timer", value:{type:"stop", value:{}}});
+const clearTimer = ()=>({type:"timer", value:{type:"clear", value:{}}});
 const Timer = {
   add:addTimer, stop:stopTimer, clear:clearTimer,
 };
