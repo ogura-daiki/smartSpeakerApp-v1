@@ -6,6 +6,13 @@ const escapeRegExp = (str)=>{
     : str;
 }
 
+class NamedImportSlotResult {
+  constructor(name, value){
+    this.name = name;
+    this.value = value;
+  }
+}
+
 const slotFactory = {
   func:{
     cond:(fn)=>typeof fn === "function",
@@ -56,10 +63,11 @@ const slotFactory = {
         let count=0;
         const groupResults = Object.entries(matchResult.groups).map(([name, str])=>{
           const result = vals[+name.slice(1)](str);
-          if(result instanceof Array){
-            return result;
+          console.log(result)
+          if(result instanceof NamedImportSlotResult){
+            return [result.name, result.value];
           }
-          return [count++,result];
+          return [count++, result];
         });
         //console.log(groupResults)
         if(!groupResults.every(([,v])=>v !== false)){
@@ -104,7 +112,7 @@ const Skill = (skillName, wakeWord) => {
           throw new Error(`スロット名：${name} は登録されていません`)
         }
         const fn = slots.get(name);
-        return [fn.slotName, fn(input)];
+        return new NamedImportSlotResult(fn.slotName, fn(input));
       }
     },
 

@@ -321,6 +321,19 @@ const testSkill = Skill("test");
 testSkill.defineSlots({
   greet:Slot(["おはよう", "こんにちは", "こんばんは"]),
   greetWorld:Slot`${testSkill.slot("greet")} 世界`,
+  duration:Slot(input=>{
+    const timeString = input.replace(/\s/, "")
+      .replace(/([ふぶぷ]ん|文)/g, "分")
+      //.replace(/[]/g, s=>[..."一二三四五六七八九"].indexOf(s)+1)
+      .replace(/[版]/, "半")
+      .replace(/[点天]/, ".");
+      
+    const seconds = parseTimeString(timeString);
+    if(!seconds){
+      return false;
+    }
+    return {timeString, seconds};
+  })
 });
 
 testSkill.defineCommands({
@@ -334,27 +347,18 @@ testSkill.defineCommands({
   }),
   timer:Command({
     root:Slot(input=>{
-      const result = /^(?<time>.+)+(?<operate>の(?:タイマー|アラーム)を?(?:セットして|かけて))$/.exec(input);
+      const body = Slot`${testSkill.slot("duration")}の${Slot(/(?:タイマー|アラーム)を?(?:セットして|かけて)/)}`;
+      const result = body(input);
       if(!result) return false;
-      const timeString = result.groups.time
-        .replace(/\s/, "")
-        .replace(/([ふぶぷ]ん|文)/g, "分")
-        //.replace(/[]/g, s=>[..."一二三四五六七八九"].indexOf(s)+1)
-        .replace(/[版]/, "半")
-        .replace(/[点天]/, ".");
-
-      const seconds = parseTimeString(timeString);
-      if(!seconds){
-        return false;
-      }
-      const readableTimeString = secondsToTimeString(seconds);
-      //console.log(readableTimeString);
-      return {all:timeString+result.groups.operate, value:{seconds, timeString:readableTimeString}};
+      result.all = result.groups.duration.timeString+"の"+result.groups[0];
+      return result;
     }),
     callback:(result)=>{
+
+      console.log(result);
       return [
-        {type:"timer", value:{action:"add", duration:result.value.seconds*1000}},
-        {type:"text", value:`${result.value.timeString}のタイマーをセットしました`}
+        {type:"timer", value:{action:"add", duration:result.groups.duration.seconds*1000}},
+        {type:"text", value:`${result.groups.duration.timeString}のタイマーをセットしました`}
       ];
     }
   })
