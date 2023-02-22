@@ -10,6 +10,11 @@ const sounds = {
   }),
 };
 
+const newAlarmSound = ()=>new Howl({
+  src: [`${rootPath}/src/sounds/alarm01.mp3`],
+  loop:true,
+});
+
 class TimerView extends LitElement{
   static get styles(){
     return css`
@@ -77,6 +82,7 @@ class TimerView extends LitElement{
         <span id=status>${status}</span>
       </div>
       ${when(!this.timerSession.finished, ()=>html`<button @click=${()=>this.timerSession.cancel()}>キャンセル</button>`)}
+      ${when(this.timerSession.finished && !this.timerSession.stopped, ()=>html`<button @click=${()=>{this.timerSession.onStop();this.requestUpdate()}}>停止</button>`)}
     </div>
     `;
   }
@@ -225,6 +231,7 @@ class App extends LitElement{
                 start:Date.now(),
                 duration:result.value.duration,
                 finished:false,
+                stopped:false,
                 canceled:false,
                 onFinish:()=>{
                   const idx = this.timers.findIndex(t=>t.id === id);
@@ -232,15 +239,21 @@ class App extends LitElement{
                   timerSession.finished=true;
                   this.requestUpdate();
                 },
+                onStop:()=>{
+                  timerSession.stopped = true;
+                  timerSession.sound?.stop();
+                },
                 cancel:()=>{
                   alert("タイマーをキャンセルしました");
                   clearTimeout(timerSession.timeoutId);
                   timerSession.canceled = true;
+                  timerSession.onStop();
                   timerSession.onFinish();
                 },
                 timeoutId:setTimeout(()=>{
                   //alert("タイマーが完了しました");
-                  sounds.alarm01.play();
+                  timerSession.sound = newAlarmSound();
+                  timerSession.sound.play();
                   timerSession.onFinish();
                 }, result.value.duration),
               };
