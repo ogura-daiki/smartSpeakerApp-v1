@@ -62,9 +62,9 @@ BaseSkill.defineCommands({
     }
   }),
   search:Command({
-    root:Slot`${BaseSkill.slot("freeWord")}${Slot(/(って|と|を)検索(して)?/)}`,
+    root:Slot(/(.+?)(を|と|が|のこと|は|って|とは).*(教えて|知ってる|教えて|検索(して)?|調べ(る|て)?)?.*/),
     callback: async (result)=>{
-      const searchText = result.groups.freeWord.all;
+      const searchText = result[1];
       const searchResults = await search(searchText).then(searchResult=>{
         return searchResult.items.map(item=>{
           const title = item.title;
