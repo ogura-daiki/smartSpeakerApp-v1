@@ -29,7 +29,7 @@ class SpeechToText {
     recognition.continuous = true;
   }
 
-  static #restart(){
+  static restart(){
     this.stop();
     this.start();
   }
@@ -59,19 +59,19 @@ class SpeechToText {
     rec.onnomatch = ()=>{
       //console.log("onnomatch");
       //document.getElementById('status').innerHTML = "もう一度試してください";
-      this.#restart();
+      this.restart();
     };
     rec.onerror = (event) => {
       //document.getElementById('status').innerHTML = "エラー";
       console.log("onerror:" + event.error);
       if (!isSpeechStarted){
-        this.#restart();
+        this.restart();
       }
     };
     rec.onsoundend = ()=>{
       //document.getElementById('status').innerHTML = "停止中";
       //console.log("onsoundend");
-      this.#restart();
+      this.restart();
     };
     /*
     rec.onaudiostart = ()=>{
@@ -109,12 +109,12 @@ class SpeechToText {
       isSpeechStarted = true;
       clearTimeout(timerId);
       if (isFinal) {
-        this.#restart();
+        this.restart();
       }
       else{
         timerId = setTimeout(()=>{
           this.#callback({isFinal:true, textList});
-          this.#restart();
+          this.restart();
         }, 3000);
       }
     }

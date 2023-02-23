@@ -9,6 +9,9 @@ const sounds = {
   alarm01:new Howl({
     src: [`${rootPath}/src/sounds/alarm01.mp3`],
   }),
+  wake:new Howl({
+    src: [`${rootPath}/src/sounds/wake.mp3`],
+  }),
 };
 
 const newAlarmSound = ()=>new Howl({
@@ -300,7 +303,18 @@ class App extends LitElement{
     this.input = [];
     this.timers = [];
 
+    const wakeWord = Slot`${Slot(/(へい|HEY|hey|Hey|はい|)/)} スピーカー`;
+    let waken = false;
     SpeechToText.setCallback(({isFinal, textList})=>{
+      console.log(textList);
+      if(!waken){
+        if(textList.some(t=>wakeWord(t))){
+          waken = testSkill;
+          SpeechToText.restart();
+          sounds.wake.play();
+        }
+        return;
+      }
       if(!this.input[this.#index]){
         this.input[this.#index] = {fixed:false,text:""};
       }
@@ -309,7 +323,7 @@ class App extends LitElement{
       inputSession.text = textList[0];
       if(isFinal){
         //console.log(textList)
-        const result = testSkill.execAll(textList);
+        const result = waken.execAll(textList);
         let results = [
           Reply.Text("すみません、よくわかりませんでした。"),
         ];
@@ -329,6 +343,7 @@ class App extends LitElement{
         speech(texts);
 
         this.#index+=1;
+        waken = null;
       }
       this.requestUpdate();
     });
