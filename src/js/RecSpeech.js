@@ -41,6 +41,10 @@ class SpeechToText {
     soundend:()=>this.restart(),
     error:(event) => {
       console.log("onerror:" + event.error);
+      if(event.error === "not-allowed"){
+        alert("音声認識機能、またはマイクの利用が許可されていません。機能の利用を許可してから再度お試しください。");
+        return;
+      }
       if (!this.isSpeechStarted){
         this.restart();
       }
