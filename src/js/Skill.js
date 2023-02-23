@@ -52,7 +52,7 @@ const slotFactory = {
     converter:(strs, ...vals)=>{
       strs = strs.map(s=>escapeRegExp(s).replace(/\s+/g, "(?:\\s*)"));
       vals = vals.map(v=>Slot(v));
-      const regexStr = vals.reduce((s,v,i)=>s+`(?<v${i}>.+?)`+`(?<s${i+1}>${strs[i+1]})`,`(?<s0>${strs[0]})`);
+      const regexStr = vals.reduce((s,v,i)=>s+`(?<v${i}>.*)`+`(?<s${i+1}>${strs[i+1]})`,`(?<s0>${strs[0]})`);
       const regex = new RegExp(`^${regexStr}$`);
       //console.log(regexStr, vals.map(v=>[v.slotName, v]));
       return (input) => {
@@ -70,7 +70,7 @@ const slotFactory = {
             continue;
           }
 
-          const result = vals[+name.slice(1)](value);
+          const result = vals[+name.slice(1)](value.trim());
           //console.log(result)
           let entry;
           if(result instanceof NamedImportSlotResult){
