@@ -2,7 +2,7 @@ import { html, LitElement, css, when, keyed, guard } from "./Lit.js";
 import { parseTimeString, secondsToTimeString } from "./parseTimeString.js";
 import SpeechToText from "./RecSpeech.js";
 import Reply from "./Reply.js";
-import { Command, Skill, Slot } from "./Slot.js";
+import { Command, Skill, Slot } from "./Skill.js";
 import { speech } from "./TextToSpeech.js";
 
 const sounds = {
