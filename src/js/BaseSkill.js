@@ -1,6 +1,6 @@
 import { Command, Skill, Slot } from "./Skill.js";
 
-const BaseSkill = Skill("base");
+const BaseSkill = Skill("base", Slot`${Slot(/(はい|へい|へー|Hey|HEY|hey)/)} スピーカー`);
 BaseSkill.defineSlots({
   greet:Slot(["おはよう", "こんにちは", "こんばんは"]),
   greetWorld:Slot`${BaseSkill.slot("greet")} 世界`,

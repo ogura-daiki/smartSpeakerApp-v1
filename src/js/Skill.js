@@ -154,6 +154,10 @@ const Skill = (skillName, wakeWord) => {
       }
       return {matched:false};
     },
+
+    testWakeWord(textList){
+      return textList.some(text=>wakeWord(text));
+    }
   };
 }
 
