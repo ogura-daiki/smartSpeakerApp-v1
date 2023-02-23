@@ -6,8 +6,10 @@ if ('SpeechRecognition' in window) {
   console.log("failed!!!");
 }
 
-
 class SpeechToText {
+
+  static isSpeechStarted;
+  static timerId;
   constructor(){
     throw new Error();
   }
@@ -34,67 +36,16 @@ class SpeechToText {
     this.start();
   }
 
-  static stop(){
-    const rec = this.#recognition;
-    rec.onsoundend = undefined;
-    rec.onerror = undefined;
-    rec.onnomatch = undefined;
-    rec.onresult = undefined;
-    
-    rec.abort();
-    this.#recognition = undefined;
-  }
-
-  static start(){
-    let isSpeechStarted = false;
-
-    this.#createRecognition();
-
-    const rec = this.#recognition;
-
-    rec.onsoundstart = ()=>{
-      //document.getElementById('status').innerHTML = "認識中";
-      //console.log("onsoundstart");
-    };
-    rec.onnomatch = ()=>{
-      //console.log("onnomatch");
-      //document.getElementById('status').innerHTML = "もう一度試してください";
-      this.restart();
-    };
-    rec.onerror = (event) => {
-      //document.getElementById('status').innerHTML = "エラー";
+  static #callbacks = {
+    match:()=>this.restart(),
+    soundend:()=>this.restart(),
+    error:(event) => {
       console.log("onerror:" + event.error);
-      if (!isSpeechStarted){
+      if (!this.isSpeechStarted){
         this.restart();
       }
-    };
-    rec.onsoundend = ()=>{
-      //document.getElementById('status').innerHTML = "停止中";
-      //console.log("onsoundend");
-      this.restart();
-    };
-    /*
-    rec.onaudiostart = ()=>{
-      console.log("onaudiostart");
-    }
-    rec.onaudioend = ()=>{
-      console.log("onaudioend");
-    }
-    rec.onspeechstart = ()=>{
-      console.log("onspeechstart");
-    }
-    rec.onspeechend = ()=>{
-      console.log("onspeechend");
-    }
-  
-    rec.onend = ()=>{
-      console.log("onend");
-    }
-    */
-  
-    let timerId;
-    rec.onresult = (event) => {
-      //console.log("result------------------");
+    },
+    result:event=>{
       let isFinal = false;
       const results = event.results;
       const textList = [];
@@ -106,19 +57,40 @@ class SpeechToText {
         }
       }
       this.#callback({isFinal, textList});
-      isSpeechStarted = true;
-      clearTimeout(timerId);
+      this.isSpeechStarted = true;
+      clearTimeout(this.timerId);
       if (isFinal) {
         this.restart();
+        return;
       }
-      else{
-        timerId = setTimeout(()=>{
-          this.#callback({isFinal:true, textList});
-          this.restart();
-        }, 3000);
-      }
+      
+      this.timerId = setTimeout(()=>{
+        console.log({textList})
+        this.#callback({isFinal:true, textList});
+        this.restart();
+      }, 3000);
     }
-    isSpeechStarted = false;
+  };
+
+  static stop(){
+    const rec = this.#recognition;
+    Object.entries(this.#callbacks)
+      .forEach(([name, func])=>rec.removeEventListener(name, func));
+    console.log(this.timerId)
+    clearTimeout(this.timerId);
+    
+    rec.abort();
+    this.#recognition = undefined;
+  }
+
+  static start(){
+
+    this.#createRecognition();
+    const rec = this.#recognition;
+
+    Object.entries(this.#callbacks)
+      .forEach(([name, func])=>rec.addEventListener(name, func));
+    this.isSpeechStarted = false;
     //document.getElementById('status').innerHTML = "start";
     console.log("start");
     rec.start();
