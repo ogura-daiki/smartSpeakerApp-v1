@@ -13,10 +13,34 @@ class NamedImportSlotResult {
   }
 }
 
+class Slot {
+  constructor(fn, regexStr){
+    this.fn = fn;
+    this.regexpString = regexStr
+  }
+  exec(input){
+    return this.fn(input);
+  }
+}
+
+class NamedImportSlot extends Slot {
+  constructor(slot){
+    super(null, slot.regexpString);
+    this.slot = slot;
+  }
+  exec(input){
+    return new NamedImportSlotResult(this.slot.slotName, this.slot.exec(input));
+  }
+}
+
 const slotFactory = {
+  slot:{
+    cond:(o)=>o instanceof Slot,
+    converter:o=>o,
+  },
   func:{
     cond:(fn)=>typeof fn === "function",
-    converter:fn=>fn,
+    converter:fn=>new Slot(fn, ".*"),
   },
   str:{
     cond:(str)=>{
@@ -24,14 +48,14 @@ const slotFactory = {
       return typeof str === "string";
     },
     converter:(str)=>{
-      return (input)=>input===str?{all:str}:false;
+      return new Slot((input)=>input===str?{all:str}:false, escapeRegExp(str));
     },
   },
   list:{
     cond:(list)=>list instanceof Array && !list.raw,
     converter:(list)=>{
       list = new Set(list);
-      return (input)=>list.has(input)?{all:input}:false;
+      return new Slot((input)=>list.has(input)?{all:input}:false, `(?:${[...list.keys()].map(escapeRegExp).join("|")})`);
     }
   },
   regex:{
@@ -39,7 +63,7 @@ const slotFactory = {
     converter:(regex)=>{
       const regexStr = (""+regex).slice(1,-1);
       regex = new RegExp(`^${regexStr}$`);
-      return (input)=>regex.test(input)?{all:input, ...regex.exec(input)}:false;
+      return new Slot((input)=>regex.test(input)?{all:input, ...regex.exec(input)}:false, regexStr);
     }
   },
   tag:{
@@ -51,11 +75,12 @@ const slotFactory = {
     },
     converter:(strs, ...vals)=>{
       strs = strs.map(s=>escapeRegExp(s).replace(/\s+/g, "(?:\\s*)"));
-      vals = vals.map(v=>Slot(v));
-      const regexStr = vals.reduce((s,v,i)=>s+`(?<v${i}>.*)`+`(?<s${i+1}>${strs[i+1]})`,`(?<s0>${strs[0]})`);
+      vals = vals.map(v=>SlotBuilder(v));
+      const regexStr = vals.reduce((s,v,i)=>s+`(?<v${i}>${v.regexpString})`+`(?<s${i+1}>${strs[i+1]})`,`(?<s0>${strs[0]})`);
       const regex = new RegExp(`^${regexStr}$`);
+      console.log(regex)
       //console.log(regexStr, vals.map(v=>[v.slotName, v]));
-      return (input) => {
+      const func = (input) => {
         if(!regex.test(input)){
           return false;
         }
@@ -70,7 +95,7 @@ const slotFactory = {
             continue;
           }
 
-          const result = vals[+name.slice(1)](value.trim());
+          const result = vals[+name.slice(1)].exec(value.trim());
           //console.log(result)
           let entry;
           if(result instanceof NamedImportSlotResult){
@@ -86,10 +111,11 @@ const slotFactory = {
         }
         return {all:allStr, groups:Object.fromEntries(groupEntries)};
       }
+      return new Slot(func, regexStr);
     }
   },
 }
-const Slot = (...args) => {
+const SlotBuilder = (...args) => {
   const factory = Object.values(slotFactory).find(f=>f.cond(...args));
   if(!factory){
     throw new Error("この入力からスロットを作成できません");
@@ -97,15 +123,15 @@ const Slot = (...args) => {
   return factory.converter(...args);
 }
 
-const Command = ({root, callback}) => (input) => {
-  const match = root(input);
+const Command = ({root, callback}) => ({exec:(input) => {
+  const match = root.exec(input);
   const matched = !!match;
   if(matched === false){
     return {matched};
   }
   const result = callback(match);
   return {matched, result, match};
-}
+}})
 
 const Skill = (skillName, wakeWord) => {
   const slots = new Map();
@@ -118,13 +144,7 @@ const Skill = (skillName, wakeWord) => {
       });
     },
     slot:(name)=>{
-      return (input)=>{
-        if(!slots.has(name)){
-          throw new Error(`スロット名：${name} は登録されていません`)
-        }
-        const fn = slots.get(name);
-        return new NamedImportSlotResult(fn.slotName, fn(input));
-      }
+      return new NamedImportSlot(slots.get(name));
     },
 
     defineCommands(obj){
@@ -145,7 +165,7 @@ const Skill = (skillName, wakeWord) => {
     execAll(list){
       for(const input of list){
         for(const [name, command] of commands.entries()){
-          const result = command(input);
+          const result = command.exec(input);
           if(result.matched){
             //console.log(result);
             return {input:result.match.all, ...result};
@@ -156,9 +176,9 @@ const Skill = (skillName, wakeWord) => {
     },
 
     testWakeWord(textList){
-      return textList.some(text=>wakeWord(text));
+      return textList.some(text=>wakeWord.exec(text));
     }
   };
 }
 
-export {Skill, Command, Slot};
+export {Skill, Command, SlotBuilder as Slot};
