@@ -310,7 +310,6 @@ class App extends LitElement{
     this.input = [];
     this.timers = [];
 
-    const wakeWord = Slot`${Slot(/(へい|HEY|hey|Hey|はい|)/)} スピーカー`;
     let waken = false;
     SpeechToText.setCallback(({isFinal, textList})=>{
       console.log(textList);
