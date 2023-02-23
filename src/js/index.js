@@ -9,9 +9,11 @@ import { speech } from "./TextToSpeech.js";
 const sounds = {
   alarm01:new Howl({
     src: [`${rootPath}/src/sounds/alarm01.mp3`],
+    preload:true,
   }),
   wake:new Howl({
     src: [`${rootPath}/src/sounds/wake.mp3`],
+    preload:true,
   }),
 };
 
