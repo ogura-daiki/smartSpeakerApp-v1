@@ -65,28 +65,30 @@ BaseSkill.defineCommands({
     root:Slot`${BaseSkill.slot("freeWord")}${Slot(/(って|と|を)検索(して)?/)}`,
     callback: async (result)=>{
       const searchText = result.groups.freeWord.all;
-      return [
-        Reply.Text(`${searchText} の検索結果はこちらです`),
-        Reply.Link(await search(searchText).then(searchResult=>{
-          return searchResult.items.map(item=>{
-            const title = item.title;
-            const description = item.snippet;
-            const url = item.link; 
-            let thumbnail;// = `https://s.wordpress.com/mshots/v1/${encodeURIComponent(item.link)}?w=128&q=${Math.random()}`;
-            try{
-              if(item.pagemap.cse_image){
-                thumbnail = item.pagemap.cse_image[0].src;
-              }
-              else if(item.pagemap.cse_thumbnail){
-                thumbnail = item.pagemap.cse_thumbnail[0].src;
-              }
+      const searchResults = await search(searchText).then(searchResult=>{
+        return searchResult.items.map(item=>{
+          const title = item.title;
+          const description = item.snippet;
+          const url = item.link; 
+          let thumbnail;// = `https://s.wordpress.com/mshots/v1/${encodeURIComponent(item.link)}?w=128&q=${Math.random()}`;
+          try{
+            if(item.pagemap.cse_image){
+              thumbnail = item.pagemap.cse_image[0].src;
             }
-            catch(e){
+            else if(item.pagemap.cse_thumbnail){
+              thumbnail = item.pagemap.cse_thumbnail[0].src;
+            }
+          }
+          catch(e){
 
-            }
-            return {url, title, description, thumbnail};
-          });
-        })),
+          }
+          return {url, title, description, thumbnail};
+        });
+      });
+      const wiki = searchResults.find(({url})=>url.indexOf("wiki")>=0);
+      return [
+        Reply.Text(wiki?wiki.description:`${searchText} の検索結果はこちらです`),
+        Reply.Link(searchResults),
       ];
     }
   })
