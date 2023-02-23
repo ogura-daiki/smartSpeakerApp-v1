@@ -23,6 +23,12 @@ BaseSkill.defineSlots({
   })
 });
 
+const getWikipediaSummary = searchText => {
+  return fetch(`https://ja.wikipedia.org/w/api.php?origin=*&format=json&action=query&prop=extracts&exintro&explaintext&redirects=1&titles=${searchText}`)
+    .then(r=>r.json())
+    .then(wikiResult => Object.values(wikiResult?.query?.pages||{}).find(({extract})=>extract)?.extract);
+}
+
 BaseSkill.defineCommands({
   greetWorldPeople:Command({
     root:Slot`${BaseSkill.slot("greet")}${BaseSkill.slot("freeWord")}`,
@@ -85,9 +91,18 @@ BaseSkill.defineCommands({
           return {url, title, description, thumbnail};
         });
       });
-      const wiki = searchResults.find(({url})=>url.indexOf("wiki")>=0);
+      const siteList = [
+        "wikipedia",
+        "weblio",
+        "atwiki",
+        "game-info.wiki",
+        "seesaawiki",
+        "dic.pixiv.net",
+        "dic.nicovideo",
+      ];
+      const summary = searchResults.find(({url})=>siteList.some(site=>url.indexOf(site)>=0))?.description || await getWikipediaSummary(searchText);
       return [
-        Reply.Text(wiki?wiki.description:`${searchText} の検索結果はこちらです`),
+        Reply.Text(summary||`${searchText} の検索結果はこちらです`),
         Reply.Link(searchResults),
       ];
     }
