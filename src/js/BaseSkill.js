@@ -1,5 +1,7 @@
+import { html, when } from "./Lit.js";
 import { parseTimeString } from "./parseTimeString.js";
 import Reply from "./Reply.js";
+import search from "./Search.js";
 import { Command, Skill, Slot } from "./Skill.js";
 
 const BaseSkill = Skill("base", Slot`${Slot(/(はい|へい|へー|Hey|HEY|hey)/)} スピーカー`);
@@ -57,6 +59,35 @@ BaseSkill.defineCommands({
     callback:()=>{
       location.reload();
       return [];
+    }
+  }),
+  search:Command({
+    root:Slot`${BaseSkill.slot("freeWord")}${Slot(/(って|と|を)検索(して)?/)}`,
+    callback: async (result)=>{
+      const searchText = result.groups.freeWord.all;
+      return [
+        Reply.Text(`${searchText} の検索結果はこちらです`),
+        Reply.Link(await search(searchText).then(searchResult=>{
+          return searchResult.items.map(item=>{
+            const title = item.title;
+            const description = item.snippet;
+            const url = item.link; 
+            let thumbnail;// = `https://s.wordpress.com/mshots/v1/${encodeURIComponent(item.link)}?w=128&q=${Math.random()}`;
+            try{
+              if(item.pagemap.cse_image){
+                thumbnail = item.pagemap.cse_image[0].src;
+              }
+              else if(item.pagemap.cse_thumbnail){
+                thumbnail = item.pagemap.cse_thumbnail[0].src;
+              }
+            }
+            catch(e){
+
+            }
+            return {url, title, description, thumbnail};
+          });
+        })),
+      ];
     }
   })
 });

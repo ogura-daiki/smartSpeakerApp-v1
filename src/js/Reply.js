@@ -1,4 +1,5 @@
 const Text = (str) => ({type:"text", value:str});
+const Link = (list) => ({type:"link", value:list});
 
 const addTimer = (duration) => ({type:"timer", value:{type:"add", value:{duration}}});
 const stopTimer = () => ({type:"timer", value:{type:"stop", value:{}}});
@@ -8,7 +9,7 @@ const Timer = {
 };
 
 const Reply = {
-  Text, Timer,
+  Text, Link, Timer,
 };
 
 export default Reply;

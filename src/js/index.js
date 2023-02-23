@@ -89,6 +89,30 @@ const ReplyPatterns = {
     speech:value=>[value],
     action:()=>{},
   }),
+  link: new ReplyPattern({
+    view:list=>[html`
+    <div class="linkList">
+      ${list.map(({url, title, thumbnail, description})=>html`
+        <div class="linkItem ${thumbnail?"":"noImage"}">
+          ${when(thumbnail, ()=>html`
+            <img
+              class="thumbnail"
+              src=${thumbnail}
+              @error=${e=>{
+                e.target.closest(".linkItem").classList.add("noImage");
+                e.target.remove();
+              }}>
+          `)}
+          <span class="title">${title}</span>
+          <span class="description">${description}</span>
+          <a class="link" href=${url} target="_blank" noopener noreferrer>開く</a>
+        </div>
+      `)}
+    </div>
+    `],
+    speech:list=>[],
+    action:()=>{},
+  }),
   timer:{
     add:new ReplyPattern({
       view:(value, ctx)=>[
@@ -326,6 +350,56 @@ class App extends LitElement{
       right:0px;
       box-sizing:border-box;
     }
+
+    .linkList{
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 8px;
+    }
+    .linkList .linkItem{
+      display: grid;
+      grid-template: "thumbnail title link" 1.5rem "thumbnail description link" 4.8rem / 1fr auto fit-content(4em);
+      gap: 8px;
+      height: fit-content;
+      padding: 8px;
+      border: 1px solid lightgray;
+      border-radius: 1em;
+    }
+    .linkList .linkItem.noImage {
+      grid-template: "title link" 1.5rem "description link" 4.8rem / auto fit-content(4em);
+    }
+    .linkList .linkItem .thumbnail{
+      grid-area: thumbnail;
+      height: 100%;
+      object-fit: contain;
+      aspect-ratio: 1 / 1;
+      background: gray;
+      border-radius: 1em;
+      align-self: auto;
+    }
+    .linkList .linkItem .title{
+      grid-area: title;
+      display: -webkit-box;
+      -webkit-line-clamp: 1;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      padding-left:8px;
+    }
+    .linkList .linkItem .description{
+      grid-area: description;
+      display: -webkit-box;
+      -webkit-line-clamp: 4;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      font-size: 0.8rem;
+      padding-left:8px;
+      align-self:center;
+    }
+    .linkList .linkItem .link{
+      grid-area: link;
+      align-self: center;
+      padding-right:8px;
+    }
     `;
   }
   static get properties(){
@@ -348,7 +422,7 @@ class App extends LitElement{
     this.timers = [];
 
     let waken = false;
-    SpeechToText.setCallback(({isFinal, textList})=>{
+    SpeechToText.setCallback(async ({isFinal, textList})=>{
       //console.log(textList);
       if(!waken){
         waken = this.#skillList.find(s=>s.testWakeWord(textList))
@@ -373,6 +447,10 @@ class App extends LitElement{
         if(result.matched){
           inputSession.text = result.input;
           results = result.result;
+        }
+
+        if(results instanceof Promise){
+          results = await results;
         }
 
         inputSession.results = results;
