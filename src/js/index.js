@@ -55,6 +55,23 @@ const TimerSession = (ctx, duration) => {
       timerSession.sound.play();
       timerSession.onFinish();
     }, duration),
+
+    getStatusText:()=>{
+      if(timerSession.canceled){
+        return "キャンセル";
+      }
+      if(timerSession.finished){
+        return "完了";
+      }
+      const nokori = start + timerSession.duration - Date.now();
+      return secondsToTimeString(Math.floor(nokori/1000));
+    },
+    getDurationText:()=>{
+      return secondsToTimeString(timerSession.duration/1000);
+    },
+
+    isCancelable:()=>!timerSession.finished,
+    isStoppable:()=>timerSession.finished && !timerSession.stopped,
   };
   return timerSession;
 }
@@ -177,8 +194,7 @@ class TimerView extends LitElement{
     if(!this.timerSession){
       return;
     }
-    const nokori = this.timerSession.canceled? 0 : Math.max(0, (this.timerSession.start+this.timerSession.duration)-Date.now());
-    const status = this.timerSession.canceled?"キャンセル":this.timerSession.finished?"完了":secondsToTimeString(Math.floor(nokori/1000));
+    const status = this.timerSession.getStatusText();
     //console.log(nokori);
     return html`
     <div>タイマー</div>
@@ -187,11 +203,30 @@ class TimerView extends LitElement{
         <div id=icon>⌛</div>
       </div>
       <div id=display>
-        <span id=max>${secondsToTimeString(this.timerSession.duration/1000)}</span>
+        <span id=max>${this.timerSession.getDurationText()}</span>
         <span id=status>${status}</span>
       </div>
-      ${when(!this.timerSession.finished, ()=>html`<button @click=${()=>this.timerSession.cancel()}>キャンセル</button>`)}
-      ${when(this.timerSession.finished && !this.timerSession.stopped, ()=>html`<button @click=${()=>{this.timerSession.stop();this.requestUpdate()}}>停止</button>`)}
+      ${when(
+        this.timerSession.isCancelable(),
+        ()=>html`
+          <button @click=${()=>this.timerSession.cancel()}>
+              キャンセル
+          </button>
+        `
+      )}
+      ${when(
+        this.timerSession.isStoppable(),
+        ()=>html`
+          <button
+            @click=${()=>{
+              this.timerSession.stop();
+              this.requestUpdate();
+            }}
+          >
+            停止
+          </button>
+        `
+      )}
     </div>
     `;
   }
