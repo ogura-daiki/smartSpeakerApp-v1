@@ -1,9 +1,11 @@
+import { parseTimeString } from "./parseTimeString.js";
+import Reply from "./Reply.js";
 import { Command, Skill, Slot } from "./Skill.js";
 
 const BaseSkill = Skill("base", Slot`${Slot(/(はい|へい|へー|Hey|HEY|hey)/)} スピーカー`);
 BaseSkill.defineSlots({
+  freeWord:Slot(/(.*)?/),
   greet:Slot(["おはよう", "こんにちは", "こんばんは"]),
-  greetWorld:Slot`${BaseSkill.slot("greet")} 世界`,
   duration:Slot(input=>{
     const timeString = input.replace(/\s/, "")
       .replace(/([ふぶぷ]ん|文)/g, "分")
@@ -21,9 +23,9 @@ BaseSkill.defineSlots({
 
 BaseSkill.defineCommands({
   greetWorldPeople:Command({
-    root:Slot`${BaseSkill.slot("greetWorld")} の${Slot(/(皆|みんな)(様方?|たち)?/)}`,
+    root:Slot`${BaseSkill.slot("greet")}${BaseSkill.slot("freeWord")}`,
     callback:(result)=>{
-      const greet = result.groups.greetWorld.groups.greet.all;
+      const greet = result.groups.greet.all;
       //alert(`世界の皆へのあいさつ：${greet}`);
       return [Reply.Text(`はい、${greet}。`)]
     }
@@ -51,7 +53,7 @@ BaseSkill.defineCommands({
     callback:()=>[Reply.Timer.clear()],
   }),
   reload:Command({
-    root:Slot(/(再読み込み|リロード)(して)?/),
+    root:Slot(/(再読み込み|再起動|リスタート|リセット|リロード|リブート)(して)?/),
     callback:()=>{
       location.reload();
       return [];
