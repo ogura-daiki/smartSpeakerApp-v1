@@ -78,7 +78,7 @@ const slotFactory = {
       vals = vals.map(v=>SlotBuilder(v));
       const regexStr = vals.reduce((s,v,i)=>s+`(?<v${i}>${v.regexpString})`+`(?<s${i+1}>${strs[i+1]})`,`(?<s0>${strs[0]})`);
       const regex = new RegExp(`^${regexStr}$`);
-      console.log(regex)
+      //console.log(regex)
       //console.log(regexStr, vals.map(v=>[v.slotName, v]));
       const func = (input) => {
         if(!regex.test(input)){

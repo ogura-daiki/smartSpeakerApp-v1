@@ -25,7 +25,7 @@ const newAlarmSound = ()=>new Howl({
 const TimerSession = (ctx, duration) => {
   const start = Date.now();
   const id = Math.random()+":"+start;
-  console.log({start, id});
+  //console.log({start, id});
   const timerSession = {
     id,
     start,
@@ -349,7 +349,7 @@ class App extends LitElement{
 
     let waken = false;
     SpeechToText.setCallback(({isFinal, textList})=>{
-      console.log(textList);
+      //console.log(textList);
       if(!waken){
         waken = this.#skillList.find(s=>s.testWakeWord(textList))
         if(waken){
