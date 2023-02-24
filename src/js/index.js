@@ -5,6 +5,7 @@ import SpeechToText from "./RecSpeech.js";
 import Reply from "./Reply.js";
 import { Command, Skill, Slot } from "./Skill.js";
 import { speech } from "./TextToSpeech.js";
+import VocaloidSkill from "./VocaloidSkill.js";
 
 const sounds = {
   alarm01:new Howl({
@@ -424,7 +425,7 @@ class App extends LitElement{
     let waken = false;
     let timerId;
     SpeechToText.setCallback(async ({isFinal, textList})=>{
-      //console.log(textList);
+      console.log(textList);
       clearTimeout(timerId);
       if(!waken){
         waken = this.#skillList.find(s=>s.testWakeWord(textList))
@@ -514,6 +515,7 @@ class App extends LitElement{
 customElements.define("main-app", App);
 const app = document.body.querySelector("main-app");
 app.registerSkill(BaseSkill);
+app.registerSkill(VocaloidSkill);
 //SpeechToText.start();
 
 const inputList = [
