@@ -91,7 +91,7 @@ BaseSkill.defineCommands({
     }
   }),
   search:Command({
-    root:Slot(/(.+?)(を|と|が|のこと|は|って|とは).*(教えて|知ってる|教えて|検索(して)?|調べ(る|て)?)?.*/),
+    root:Slot(/(.+?)((って|とは)|(を|のこと|(は|が|って)何|について).*(教えて|知ってる|教えて|検索(して)?|調べ(る|て)?)).*/),
     callback: async (result)=>{
       const searchText = result[1];
       const searchResults = await search(searchText).then(searchResult=>{
