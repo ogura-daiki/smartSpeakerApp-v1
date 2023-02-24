@@ -7,7 +7,10 @@ const search = (text) => gapi.client
     e => console.error("Execute error", e)
   );
 
+let loaded = false;
 const loadClient = () => {
+  if(loaded) return;
+  loaded = !loaded;
   gapi.client.setApiKey("AIzaSyCvmdTnfUT0YQacBH1-bDMHYcc84UtrAGE");
   gapi.client.load("https://content.googleapis.com/discovery/v1/apis/customsearch/v1/rest")
     .then(
