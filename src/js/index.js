@@ -422,13 +422,20 @@ class App extends LitElement{
     this.timers = [];
 
     let waken = false;
+    let timerId;
     SpeechToText.setCallback(async ({isFinal, textList})=>{
       //console.log(textList);
+      clearTimeout(timerId);
       if(!waken){
         waken = this.#skillList.find(s=>s.testWakeWord(textList))
         if(waken){
           SpeechToText.restart();
           sounds.wake.play();
+        }
+        else{
+          timerId = setTimeout(()=>{
+            SpeechToText.restart();
+          }, 300);
         }
         return;
       }
