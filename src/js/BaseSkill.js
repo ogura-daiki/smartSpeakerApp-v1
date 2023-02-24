@@ -29,6 +29,26 @@ const getWikipediaSummary = searchText => {
     .then(wikiResult => Object.values(wikiResult?.query?.pages||{}).find(({extract})=>extract)?.extract);
 }
 
+const siteList = [
+  "ja.wikipedia",
+  "weblio",
+  "dic.nicovideo",
+  "dic.pixiv.net",
+  "atwiki",
+  "game-info.wiki",
+  "seesaawiki",
+];
+
+const findSummaryPage = items => {
+  for(const site of siteList){
+    for(const item of items){
+      if(item.url.indexOf(site)>=0){
+        return item;
+      }
+    }
+  }
+}
+
 BaseSkill.defineCommands({
   greetWorldPeople:Command({
     root:Slot`${BaseSkill.slot("greet")}${BaseSkill.slot("freeWord")}`,
@@ -91,16 +111,7 @@ BaseSkill.defineCommands({
           return {url, title, description, thumbnail};
         });
       });
-      const siteList = [
-        "ja.wikipedia",
-        "weblio",
-        "atwiki",
-        "game-info.wiki",
-        "seesaawiki",
-        "dic.pixiv.net",
-        "dic.nicovideo",
-      ];
-      const summary = searchResults.find(({url})=>siteList.some(site=>url.indexOf(site)>=0))?.description || await getWikipediaSummary(searchText);
+      const summary = findSummaryPage(searchResults)?.description || await getWikipediaSummary(searchText);
       return [
         Reply.Text(summary||`${searchText} の検索結果はこちらです`),
         Reply.Link(searchResults),
