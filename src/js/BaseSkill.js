@@ -32,11 +32,14 @@ const getWikipediaSummary = searchText => {
 const siteList = [
   "ja.wikipedia",
   "weblio",
+  "kotobank.jp",
+  "dictionary.goo",
   "dic.nicovideo",
   "dic.pixiv.net",
+  "wikiwiki.jp",
   "atwiki",
-  "game-info.wiki",
   "seesaawiki",
+  "game-info.wiki",
 ];
 
 const findSummaryPage = items => {
