@@ -92,7 +92,7 @@ BaseSkill.defineCommands({
         });
       });
       const siteList = [
-        "wikipedia",
+        "ja.wikipedia",
         "weblio",
         "atwiki",
         "game-info.wiki",
