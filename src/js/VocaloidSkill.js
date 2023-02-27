@@ -8,7 +8,7 @@ const r = new Romanizer({
 
 const VocaloidSkill = Skill("vocaloidBot", Slot(/ボカ\s*ロ\s*([ボポ]ット|bot|BOT|Bot)[\s\S]*/));
 
-const searchVocaloidP = name => fetch(`https://script.google.com/macros/s/AKfycbykdy4aTpYdT3pu4GLS7R4BKNbuCFyTH4xWlxrFDoPuBSw1A2sAFN7KdezjRfGFmjsj/exec?q=${name}`).then(r=>r.json())
+const searchVocaloidP = name => fetch(`https://script.google.com/macros/s/AKfycby7bwBdLa9u0AlRePq8VZ3OCD0vTtl-Wi9OdF4cjTIomjHEhKX0PHcoYPkpyQJegVj1/exec?q=${name}`).then(r=>r.json())
 
 VocaloidSkill.defineCommands({
   playProducer:Command({
