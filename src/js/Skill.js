@@ -6,6 +6,35 @@ const escapeRegExp = (str)=>{
     : str;
 }
 
+
+const charPointPatterns = [
+  [/\s/,0],
+  [/[\u3040-\u309F]/,1],
+  [/[\u30A0-\u30FF]/,1.2],
+  [/[a-zA-Z]/,3],
+  [{test:_=>true}, 2],
+];
+const getTextLengthScore = (length) => -length*2.5;
+const getCharPoint = char => {
+  return charPointPatterns.find(p=>p[0].test(char))[1];
+}
+const sortTextList = list=>{
+  const cache = new Map();
+  const getScore = str=>{
+    if(cache.has(str)){
+      return cache.get(str);
+    }
+    const chars = [...new Intl.Segmenter().segment(str)].map(o=>o.segment);
+    const lengthScore = getTextLengthScore(chars.length);
+    const charsScore = chars.reduce((c,s)=>c+getCharPoint(s),0);
+    const score = lengthScore+charsScore;
+    cache.set(str, score);
+    return score;
+  }
+
+  return list.sort((v1,v2)=>getScore(v2)-getScore(v1));
+}
+
 class NamedImportSlotResult {
   constructor(name, value){
     this.name = name;
@@ -163,6 +192,8 @@ const Skill = (skillName, wakeWord) => {
       return {matched:false};
     },
     execAll(list){
+      list = sortTextList([...list]);
+      console.log(list);
       for(const input of list){
         for(const [name, command] of commands.entries()){
           const result = command.exec(input);
