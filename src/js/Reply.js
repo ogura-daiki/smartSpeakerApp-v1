@@ -8,8 +8,16 @@ const Timer = {
   add:addTimer, stop:stopTimer, clear:clearTimer,
 };
 
+const Youtube = {
+  loadPlaylist:(data) => ({type:"media", value:{type:"youtube", value:{type:"loadPlaylist", value:data}}}),
+};
+
+const Media = {
+  Youtube,
+};
+
 const Reply = {
-  Text, Link, Timer,
+  Text, Link, Timer, Media,
 };
 
 export default Reply;

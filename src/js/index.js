@@ -6,6 +6,7 @@ import Reply from "./Reply.js";
 import { Command, Skill, Slot } from "./Skill.js";
 import { speech } from "./TextToSpeech.js";
 import VocaloidSkill from "./VocaloidSkill.js";
+import { createPlayer } from "./Youtube.js";
 
 const sounds = {
   alarm01:new Howl({
@@ -152,6 +153,18 @@ const ReplyPatterns = {
       }
     }),
   },
+  media:{
+    youtube:{
+      loadPlaylist:new ReplyPattern({
+        view:({playlist, userName}) => [`${userName}の再生リスト`],
+        speech:({playlist, userName}) => [`${userName}の再生リストはこちらです`],
+        action: async ({playlist, userName}) => {
+          const player = await createPlayer("temp", playlist);
+          //player.playVideo();
+        },
+      })
+    }
+  }
 }
 const createReply = (ctx, result, keys) => {
 
