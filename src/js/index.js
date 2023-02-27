@@ -449,7 +449,7 @@ class App extends LitElement{
         else{
           timerId = setTimeout(()=>{
             SpeechToText.restart();
-          }, 300);
+          }, 1000);
         }
         return;
       }
