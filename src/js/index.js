@@ -1,3 +1,4 @@
+import BaseElement from "./BaseElement.js";
 import BaseSkill from "./BaseSkill.js";
 import { html, LitElement, css, when, keyed, guard } from "./Lit.js";
 import { parseTimeString, secondsToTimeString } from "./parseTimeString.js";
@@ -112,7 +113,7 @@ const createReply = (ctx, result, keys) => {
   }
 }
 
-class TimerView extends LitElement{
+class TimerView extends BaseElement{
   static get styles(){
     return css`
     #container{
@@ -185,7 +186,7 @@ class TimerView extends LitElement{
         ()=>html`
           <button @click=${()=>{
             this.timerSession.cancel();
-            this.dispatchEvent(new CustomEvent("timerCancel", { bubbles:true, composed:true, detail:{timerSession:this.timerSession} }));
+            this.dispatch("timerCancel", {timerSession:this.timerSession});
           }}>
               キャンセル
           </button>
@@ -198,7 +199,7 @@ class TimerView extends LitElement{
             @click=${()=>{
               this.timerSession.stop();
               this.requestUpdate();
-              this.dispatchEvent(new CustomEvent("timerStop", { bubbles:true, composed:true, detail:{timerSession:this.timerSession} }));
+              this.dispatch("timerStop", {timerSession:this.timerSession});
             }}
           >
             停止
