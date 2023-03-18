@@ -4,81 +4,11 @@ import { parseTimeString, secondsToTimeString } from "./parseTimeString.js";
 import SpeechToText from "./RecSpeech.js";
 import Reply from "./Reply.js";
 import { Command, Skill, Slot } from "./Skill.js";
+import { sounds } from "./sounds.js";
 import { speech } from "./TextToSpeech.js";
+import { TimerSession } from "./TimerSession.js";
 import VocaloidSkill from "./VocaloidSkill.js";
 import { createPlayer } from "./Youtube.js";
-
-const sounds = {
-  alarm01:new Howl({
-    src: [`${rootPath}/src/sounds/alarm01.mp3`],
-    preload:true,
-  }),
-  wake:new Howl({
-    src: [`${rootPath}/src/sounds/wake.mp3`],
-    preload:true,
-  }),
-};
-
-const newAlarmSound = ()=>new Howl({
-  src: [`${rootPath}/src/sounds/alarm01.mp3`],
-  loop:true,
-});
-
-const TimerSession = (ctx, duration) => {
-  const start = Date.now();
-  const id = Math.random()+":"+start;
-  //console.log({start, id});
-  const timerSession = {
-    id,
-    start,
-    duration,
-    finished:false,
-    stopped:false,
-    canceled:false,
-    
-    onFinish:()=>{
-      timerSession.finished=true;
-    },
-    stop:()=>{
-      timerSession.stopped = true;
-      timerSession.sound?.stop();
-      const idx = ctx.timers.findIndex(t=>t.id === id);
-      clearTimeout(timerSession.timeoutId);
-      ctx.timers.splice(idx, 1);
-      ctx.requestUpdate();
-    },
-    cancel:()=>{
-      //alert("タイマーをキャンセルしました");
-      timerSession.canceled = true;
-      timerSession.stop();
-      timerSession.onFinish();
-    },
-    timeoutId:setTimeout(()=>{
-      //alert("タイマーが完了しました");
-      timerSession.sound = newAlarmSound();
-      timerSession.sound.play();
-      timerSession.onFinish();
-    }, duration),
-
-    getStatusText:()=>{
-      if(timerSession.canceled){
-        return "キャンセル";
-      }
-      if(timerSession.finished){
-        return "完了";
-      }
-      const nokori = start + timerSession.duration - Date.now();
-      return secondsToTimeString(Math.floor(nokori/1000));
-    },
-    getDurationText:()=>{
-      return secondsToTimeString(timerSession.duration/1000);
-    },
-
-    isCancelable:()=>!timerSession.finished,
-    isStoppable:()=>timerSession.finished && !timerSession.stopped,
-  };
-  return timerSession;
-}
 
 class ReplyPattern {
   constructor({view, speech, action}){
@@ -126,9 +56,10 @@ const ReplyPatterns = {
       ],
       speech:value=>[`${secondsToTimeString(value.duration/1000)}のタイマーをセットしました`],
       action:(value, ctx)=>{
-        const timerSession = TimerSession(ctx, value.duration)
+        const timerSession = new TimerSession(value.duration)
         value.sessionId = timerSession.id;
         ctx.timers.push(timerSession);
+        timerSession.start();
         ctx.requestUpdate();
       },
     }),
@@ -218,11 +149,16 @@ class TimerView extends LitElement{
     };
   }
 
+  /**
+   * @type {TimerSession}
+   */
+  timerSession;
+
   constructor(){
     super();
     const loop = ()=>{
       this.requestUpdate();
-      if(this.timerSession && this.timerSession.finished){
+      if(this.timerSession?.finished){
         return;
       }
       setTimeout(loop, 500);
@@ -234,8 +170,6 @@ class TimerView extends LitElement{
     if(!this.timerSession){
       return;
     }
-    const status = this.timerSession.getStatusText();
-    //console.log(nokori);
     return html`
     <div>タイマー</div>
     <div id=container>
@@ -243,24 +177,28 @@ class TimerView extends LitElement{
         <div id=icon>⌛</div>
       </div>
       <div id=display>
-        <span id=max>${this.timerSession.getDurationText()}</span>
-        <span id=status>${status}</span>
+        <span id=max>${this.timerSession.durationText}</span>
+        <span id=status>${this.timerSession.statusText}</span>
       </div>
       ${when(
-        this.timerSession.isCancelable(),
+        this.timerSession.cancelable,
         ()=>html`
-          <button @click=${()=>this.timerSession.cancel()}>
+          <button @click=${()=>{
+            this.timerSession.cancel();
+            this.dispatchEvent(new CustomEvent("timerCancel", { bubbles:true, composed:true, detail:{timerSession:this.timerSession} }));
+          }}>
               キャンセル
           </button>
         `
       )}
       ${when(
-        this.timerSession.isStoppable(),
+        this.timerSession.ringing,
         ()=>html`
           <button
             @click=${()=>{
               this.timerSession.stop();
               this.requestUpdate();
+              this.dispatchEvent(new CustomEvent("timerStop", { bubbles:true, composed:true, detail:{timerSession:this.timerSession} }));
             }}
           >
             停止
@@ -487,6 +425,25 @@ class App extends LitElement{
         this.#index+=1;
         waken = null;
       }
+      this.requestUpdate();
+    });
+
+    this.addEventListener("timerCancel", e=>{
+      /**
+       * @type {TimerSession}
+       */
+      const timerSession = e.detail.timerSession;
+      const idx = this.timers.findIndex(ts=>ts.id === timerSession.id);
+      this.timers.splice(idx, 1);
+      this.requestUpdate();
+    });
+    this.addEventListener("timerStop", e=>{
+      /**
+       * @type {TimerSession}
+       */
+      const timerSession = e.detail.timerSession;
+      const idx = this.timers.findIndex(ts=>ts.id === timerSession.id);
+      this.timers.splice(idx, 1);
       this.requestUpdate();
     });
   }
