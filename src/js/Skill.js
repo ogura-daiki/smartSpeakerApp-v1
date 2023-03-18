@@ -9,25 +9,28 @@ const escapeRegExp = (str)=>{
 
 const charPointPatterns = [
   [/\s/,0],
-  [/[\u3040-\u309F]/,1],
-  [/[\u30A0-\u30FF]/,1.2],
-  [/[a-zA-Z]/,3],
-  [{test:_=>true}, 2],
+  [/[\u3040-\u309F]/,1.7],
+  [/[\u30A0-\u30FF]/,1],
+  [/\d/, 1],
+  [/[a-zA-Z]/,1.2],
+  [{test:_=>true}, 1.7],
 ];
 const getTextLengthScore = (length) => -length*2.5;
 const getCharPoint = char => {
   return charPointPatterns.find(p=>p[0].test(char))[1];
 }
 const sortTextList = list=>{
+  return list;
   const cache = new Map();
   const getScore = str=>{
     if(cache.has(str)){
       return cache.get(str);
     }
     const chars = [...new Intl.Segmenter().segment(str)].map(o=>o.segment);
-    const lengthScore = getTextLengthScore(chars.length);
+    const lengthScore = getTextLengthScore(chars.length)/2;
     const charsScore = chars.reduce((c,s)=>c+getCharPoint(s),0);
-    const score = lengthScore+charsScore;
+    const typesScore = (charPointPatterns.filter(([r])=>r.test(str.replace(/\s/g,""))).length-1)*2;
+    const score = lengthScore+charsScore+typesScore;
     cache.set(str, score);
     return score;
   }
