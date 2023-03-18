@@ -16,6 +16,13 @@ import BaseElement from "./BaseElement.js";
 const make = html => [...new DOMParser().parseFromString(`<html><head></head><body>${html}</body></html>`, "text/html").body.children];
 
 class VideoView extends BaseElement{
+  static get styles(){
+    return css`
+    :host{
+      display:block;
+    }
+    `;
+  }
   render(){
     return html``;
   }
@@ -174,6 +181,32 @@ class App extends LitElement{
       overflow-x:hidden;
       scroll-behavior: smooth;
     }
+    #mediaBar{
+      display:flex;
+      flex-flow:row;
+      height:100px;
+      gap:16px;
+      padding-right:16px;
+      border-top:1px solid lightgray;
+      background:rgb(200,200,200);
+      align-items:center;
+    }
+    #videoView{
+      background:rgb(50,50,50);
+      min-width:200px;
+      aspect-ratio:16/9;
+      height:100%;
+    }
+    #mediaBar .description{
+      flex-basis:0px;
+      flex-grow:1;
+    }
+    #mediaBar .controls{
+      display:flex;
+      flex-flow:row;
+      gap:8px;
+    }
+
     .input, .reply{
       border:1px solid rgba(0,0,0,.5);
       border-radius:8px;
@@ -394,12 +427,20 @@ class App extends LitElement{
   render(){
     return html`
     <div id="root">
-      <video-view id=videoView></video-view>
       <div id="timeline">
       ${this.input.map(({fixed, text, results})=>html`
         <div class="input ${fixed?"fixed":""}">${text}</div>
         ${when(results, ()=>this.#inputResult(results))}
       `)}
+      </div>
+      <div id=mediaBar>
+        <video-view id=videoView></video-view>
+        <span class=description>再生中のコンテンツの説明…</span>
+        <div class=controls>
+          <button>|◀</button>
+          <button>再生</button>
+          <button>▶|</button>
+        </div>
       </div>
       <div id="bottomBar">
         <button @click=${e=>SpeechToText.start()}>音声認識開始</button>
