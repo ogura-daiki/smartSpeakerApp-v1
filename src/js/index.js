@@ -21,13 +21,33 @@ class VideoView extends BaseElement{
     :host{
       display:block;
     }
+    #videoWrapper{
+      pointer-events:none;
+      user-select:none;
+      height:100%;
+      width:100%;
+    }
     `;
   }
   render(){
-    return html``;
+    return html`
+    <div id="videoWrapper"></div>
+    `;
   }
 
   #ytPlayer;
+
+  #videoWrapper;
+  firstUpdated(){
+    this.#videoWrapper = this.renderRoot.querySelector("#videoWrapper");
+  }
+
+  #changePlayerView(view){
+    while(this.#videoWrapper.firstChild){
+      this.#videoWrapper.removeChild(this.#videoWrapper.firstChild);
+    }
+    this.#videoWrapper.append(view);
+  }
 
   async play({site, type, data}){
     if(site === "youtube"){
@@ -43,7 +63,8 @@ class VideoView extends BaseElement{
 
         const playerView = wrapper.querySelector(`#${id}`);
         wrapper.remove();
-        this.renderRoot.append(playerView);
+
+        this.#changePlayerView(playerView);
       }
     }
   }
