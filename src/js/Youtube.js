@@ -31,8 +31,8 @@ const createPlayer = async (id, playlistId)=>{
   }
   return new Promise(r=>{
     const player = new YT.Player(id, {
-      height: '360',
-      width: '640',
+      height: '100%',
+      width: '100%',
       playerVars:{
         list: playlistId,
         listType: 'playlist',

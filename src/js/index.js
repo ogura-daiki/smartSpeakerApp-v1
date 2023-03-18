@@ -10,6 +10,38 @@ import { TimerSession } from "./TimerSession.js";
 import VocaloidSkill from "./VocaloidSkill.js";
 import { createPlayer } from "./Youtube.js";
 import "./TimerView.js";
+import BaseElement from "./BaseElement.js";
+
+
+const make = html => [...new DOMParser().parseFromString(`<html><head></head><body>${html}</body></html>`, "text/html").body.children];
+
+class VideoView extends BaseElement{
+  render(){
+    return html``;
+  }
+
+  #ytPlayer;
+
+  async play({site, type, data}){
+    if(site === "youtube"){
+      if(type==="playlist"){
+        const id = ("_"+Math.random()).replace(".","");
+        const [wrapper] = make(`
+        <div style="width:0px;height:0px;contain:strict;opacity:0;visibility:hidden;overflow:hidden;">
+          <div id="${id}"></div>
+        </div>
+        `);
+        document.body.append(wrapper);
+        this.#ytPlayer = await createPlayer(id, data.playlistId);
+
+        const playerView = wrapper.querySelector(`#${id}`);
+        wrapper.remove();
+        this.renderRoot.append(playerView);
+      }
+    }
+  }
+}
+customElements.define("video-view", VideoView);
 
 class ReplyPattern {
   constructor({view, speech, action}){
@@ -90,8 +122,9 @@ const ReplyPatterns = {
       loadPlaylist:new ReplyPattern({
         view:({playlist, userName}) => [`${userName}の再生リスト`],
         speech:({playlist, userName}) => [`${userName}の再生リストはこちらです`],
-        action: async ({playlist, userName}) => {
-          const player = await createPlayer("temp", playlist);
+        action: async ({playlist, userName}, ctx) => {
+          await ctx.videoView.play({site:"youtube", type:"playlist", data:{playlistId:playlist}});
+          //const player = await createPlayer("temp", playlist);
           //player.playVideo();
         },
       })
@@ -361,6 +394,7 @@ class App extends LitElement{
   render(){
     return html`
     <div id="root">
+      <video-view id=videoView></video-view>
       <div id="timeline">
       ${this.input.map(({fixed, text, results})=>html`
         <div class="input ${fixed?"fixed":""}">${text}</div>
@@ -381,7 +415,11 @@ class App extends LitElement{
     clearTimeout(this.scrollTimer);
     this.scrollTimer = setTimeout(()=>{
       timeline.scrollTo(0, timeline.scrollHeight - timeline.clientHeight);
-    }, 100)
+    }, 100);
+  }
+
+  firstUpdated(){
+    this.videoView = this.renderRoot.querySelector("#videoView");
   }
 }
 customElements.define("main-app", App);
